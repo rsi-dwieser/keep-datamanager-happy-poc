@@ -70,7 +70,8 @@ locationId=$(run_sql "select LocationID from Testtaker where userId = ${USER_ID}
 gradeLevelId=$(run_sql "select gradeLevelId from Testtaker where userId = ${USER_ID};")
 rosterId=$(run_sql "select rosterId from Testtaker where userId = ${USER_ID};")
 locationName=$(run_sql "select locationName from Location where locationId = ${locationId};")
-echo " User: $fullName ($USER_ID), gradeLevelId: ${gradeLevelId}, location: ${locationName} (${locationId})"
+testTakerId=$(run_sql "select testTakerId from Testtaker where userId = ${USER_ID};")
+echo " User: $fullName ($USER_ID), gradeLevelId: ${gradeLevelId}, location: ${locationName} (${locationId}), Test Taker ID: ${testTakerId}"
 
 
 # lookup the assignment data
@@ -98,7 +99,6 @@ echo " Parent: ${parentLocationName} (${parentLocationId}), Contract: ${contract
 echo " \n STEP 2: TEST EVENT \n"
 
 # is there a test event for the parent location?
-echo " Locating test event"
 testEventId=$(run_sql "select testEventId from testEvent where contractId=${contractId} and testEventName='${AUTO_EVENT_NAME}' and closeDate > GETDATE()")
 if [[ -z "$testEventId" ]]; then
   echo " No test event found"
@@ -114,7 +114,7 @@ if [[ -z "$testEventId" ]]; then
   run_sql_exec "insert into TestEventLocation (testEventID, locationId, isActive, createUserId, createDateTime) values(${testEventId}, ${parentLocationId}, 1, ${SERVICE_ACCOUNT_USER_ID}, GETDATE())"
 else
   testEventName=$(run_sql "select testEventName from testEvent where testEventId=${testEventId}")
-  echo " Located test event: ${testEventName}(${testEventId})"
+  echo " Located existing test event: ${testEventName} (${testEventId})"
 fi
 
 echo " \n STEP 3: TEST SESSION\n"
@@ -138,7 +138,20 @@ if [[ -z "$testSessionId" ]]; then
           SESSION_CODE="${sessionCode}")
   echo " Created Test Session: ${testSessionName} (${testSessionId})"
 else
-  echo " Located Test Session: ${sessionCode}(${testSessionId})"
+  echo " Located existing Test Session: ${sessionCode} (${testSessionId})"
 fi
 
-echo " \n STEP 3: MANAGE SESSION\n"
+echo " \n STEP 3: STUDENT MANAGED SESSION\n"
+
+manageSessionId=$(run_sql "select manageSessionId from manageSession where manageSessionGuid='${SESSION_UUID}'")
+if [[ -z "$testSessionId" ]]; then
+  manageSessionId=$(run_sql_file insert_manage_session.sql \
+    -v TEST_TAKER_ID="${testTakerId}" \
+       SUBTEST_SECTION_ID="${SUBTEST_SECTION_ID}" \
+       TEST_SESSION_ID="${testSessionId}" \
+       SESSION_UUID="${SESSION_UUID}"
+  )
+  echo " Created Student Managed Session: ${manageSessionId}"
+else
+  echo " Located existing Student Managed Session: ${manageSessionId}"
+fi
