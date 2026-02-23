@@ -1,0 +1,51 @@
+SET NOCOUNT ON;
+
+INSERT INTO dbo.testEvent (
+    testDate,
+    testEventName,
+    locationId,
+    rosterId,
+    contractID,
+    testEventGUID,
+    contractInstance,
+    achievementScores,
+    labelSuppression,
+    abilityScores,
+    sentenceCompletionReporting,
+    verbalReporting,
+    quarterMonthId,
+    normYearId,
+    normYearDescription,
+    quarterMonthDescription,
+    isPilot,
+    createUserId,
+    createDateTime,
+    closeDate,
+    participantLevel,
+    programLabelDescription
+)
+OUTPUT INSERTED.testEventID
+VALUES (
+    GETDATE(),
+    'cogat.auto.1',
+    $(PARENT_LOCATION_ID),
+    $(ROSTER_ID),
+    $(CONTRACT_ID),
+    CONVERT(char(36), NEWID()),
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    '18',
+    'I7',
+    '2017',
+    'Midyear',
+    1, 
+    13894655, 
+    GETDATE(), 
+    DATEADD(month, 1, GETDATE()),
+    0,
+    1
+);
