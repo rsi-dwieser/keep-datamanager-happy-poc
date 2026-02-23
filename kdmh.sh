@@ -1,7 +1,18 @@
 #!/bin/zsh
 
 USER_ID=$1
-SESSION_UUID=$2
+ASSIGNMENT_ID=$2
+SESSION_UUID=$3
+
+# this would be a known service account user that creates the placeholders in the DM DB.
+# for now, this is my Danny DM 101 user
+SERVICE_ACCOUNT_USER_ID=13894655
+
+## this would be a mapping in the service for the assignments API
+COGAT_7_CONTENT=457
+
+
+AUTO_EVENT_NAME="cogat.auto.3"
 
 run_sql() {
   local query="$1"
@@ -49,7 +60,7 @@ run_sql_file() {
 
 
 
-echo "Keeping DataManager slightly content (but mostly not) since 2026:"
+echo "=== KDMH: Keeping DataManager Happy since 2026 === "
 
 # locate the student ID and their location
 fullName=$(run_sql "SELECT CONCAT(firstName,' ',lastName) FROM dbo.Users WHERE userID=${USER_ID};")
@@ -70,7 +81,7 @@ echo " Parent: ${parentLocationName} (${parentLocationId}), Contract: ${contract
 
 # is there a test event for the parent location?
 echo " Locating test event"
-testEventId=$(run_sql "select * from testEvent where contractId=${contractId} and testEventName='cogat.auto.1' and closeDate > GETDATE()")
+testEventId=$(run_sql "select * from testEvent where contractId=${contractId} and testEventName='${AUTO_EVENT_NAME}' and closeDate > GETDATE()")
 if [[ -z "$testEventId" ]]; then
     echo " No test event found"
     testEventId=$(run_sql_file insert_test_event.sql \
@@ -78,8 +89,9 @@ if [[ -z "$testEventId" ]]; then
          ROSTER_ID="${rosterId}" \
          CONTRACT_ID="${contractId}")
     echo " Created test event: ${testEventId}"
-    run_sql_exec "insert into TestEventContent (testEventID, contentId, createUserId, createDateTime) values(${testEventId}, 72941, 13894655, GETDATE())"
-    run_sql_exec "insert into TestEventContent (testEventID, contentId, createUserId, createDateTime) values(${testEventId}, 457, 13894655, GETDATE())"
-    run_sql_exec "insert into TestEventLocation (testEventID, locationId, isActive, createUserId, createDateTime) values(${testEventId}, ${parentLocationId}, 1, 13894655, GETDATE())"
-
+    echo " Mapping Test Event Content: (${ASSIGNMENT_ID}) to DataManager Content ID ${COGAT_7_CONTENT} (CogAT Form 7)"
+    run_sql_exec "insert into TestEventContent (testEventID, contentId, createUserId, createDateTime) values(${testEventId}, ${COGAT_7_CONTENT}, ${SERVICE_ACCOUNT_USER_ID}, GETDATE())"
+    echo " Mapping Test Event Location: ${parentLocationName}"
+    run_sql_exec "insert into TestEventLocation (testEventID, locationId, isActive, createUserId, createDateTime) values(${testEventId}, ${parentLocationId}, 1, ${SERVICE_ACCOUNT_USER_ID}, GETDATE())"
 fi
+

@@ -27,7 +27,7 @@ INSERT INTO dbo.testEvent (
 OUTPUT INSERTED.testEventID
 VALUES (
     GETDATE(),
-    'cogat.auto.1',
+    'cogat.auto.3',
     $(PARENT_LOCATION_ID),
     $(ROSTER_ID),
     $(CONTRACT_ID),
