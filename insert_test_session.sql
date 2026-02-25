@@ -34,8 +34,8 @@ VALUES (
     $(SERVICE_ACCOUNT_USER_ID),
     $(BATTERY_ID),                       -- From Section table -> Content. 721 = Verbal (parent of 460)
     3,                                   -- 3 = Audio-English
-    1,                                   -- isOpenSession 
-   'L',                                  -- sessionType
-   'L',                                   -- testingEngine
+    0,                                   -- isOpenSession 
+   'R',                                  -- sessionType
+   'I',                                   -- testingEngine
     GETDATE()
 );

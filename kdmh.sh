@@ -18,7 +18,7 @@ SERVICE_ACCOUNT_USER_ID=13894655
 
 ## this would be a mapping in the service for the assignments API
 
-AUTO_EVENT_NAME="cogat.auto.02-25"
+AUTO_EVENT_NAME="cogat.auto.02-25-2"
 
 run_sql() {
   local query="$1"
@@ -106,9 +106,25 @@ echo " DM stores a hierarchy of content as Assessment (CogAT) -> Form (Form 7) -
 if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-VA" ]]; then
   FORM_CONTENT_ID=457 # Form 7
   TEST_GROUP_ID=458 # CogAT 7 Complete
-  SUBTEST_SECTION_ID=1928 # VERBAL BATTERY: Test 1: Verbal Analogies 
-  BATTERY_ID=721 # Verbal
   TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=731 # Verbal
+  SUBTEST_SECTION_ID=1928 # VERBAL BATTERY: Test 1: Verbal Analogies 
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-SC" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_LEVEL_ID=462 # level 13/14
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  BATTERY_ID=731 # Verbal
+  SUBTEST_SECTION_ID=1929 # VERBAL BATTERY: Test 2: Sentence Completion 
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-VC" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_LEVEL_ID=462 # level 13/14
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  BATTERY_ID=731 # Verbal
+  SUBTEST_SECTION_ID=1930 # VERBAL BATTERY: Test 3: Verbal Classification 
 fi
 
 formContentName=$(run_sql "select description from Content where contentID = ${FORM_CONTENT_ID};")
@@ -126,8 +142,9 @@ echo " ${ASSIGNMENT_ID} maps to:
 
 echo " \n STEP 3: TEST EVENT \n"
 
-echo " A Test Event (Order) connects an assessment to a student roster. This is automatically created _after_ the first student has completed testing for a specific assessment (i.e. CogAT).
- This service would auto-create a single test event for a combination of assessment, roster, and a fixed test period (like fall)."
+echo " A Test Event (Order) connects an assessment to a student roster.
+  This POC is relying on an existing Test Event - mainly because a CONTRACT INSTANCE ID is required for the scoring connection to work correctly.
+  However, there is no reason that a single test event cannot be used for all testing for a particular period of time."
 
 # is there a test event for the parent location?
 testEventId=$(run_sql "select testEventId from testEvent where contractId=${contractId} and testEventName='${AUTO_EVENT_NAME}' and closeDate > GETDATE()")
@@ -145,7 +162,7 @@ if [[ -z "$testEventId" ]]; then
   run_sql_exec "insert into TestEventLocation (testEventID, locationId, isActive, createUserId, createDateTime) values(${testEventId}, ${parentLocationId}, 1, ${SERVICE_ACCOUNT_USER_ID}, GETDATE())"
 else
   testEventName=$(run_sql "select testEventName from testEvent where testEventId=${testEventId}")
-  echo " Located existing test event: ${testEventName} (${testEventId})"
+  echo " \nLocated existing test event: ${testEventName} (${testEventId})"
 fi
 
 echo " \n STEP 4: TEST SESSION\n"

@@ -22,7 +22,13 @@ INSERT INTO dbo.testEvent (
     createDateTime,
     closeDate,
     participantLevel,
-    programLabelDescription
+    programLabelDescription,
+    secureBrowser,
+    IsDrawScreen,
+    normPeriod,
+    achievementScoresDescription,
+    abilityScoresDescription,
+    isAudio
 )
 OUTPUT INSERTED.testEventID
 VALUES (
@@ -47,5 +53,11 @@ VALUES (
     GETDATE(), 
     DATEADD(month, 1, GETDATE()),
     0,
+    'True',
+    0,
+    0,
+    'Season'
+    '(None)',
+    '(None)',
     1
 );
