@@ -4,12 +4,12 @@ USER_ID=$1
 ASSIGNMENT_ID=$2
 SESSION_UUID=$3
 ANSWER_STRING=$4
-RESULT_XML_FILE=$5
-AGENT_STRING_FILE=$6
+# RESULT_XML_FILE=$5
+# AGENT_STRING_FILE=$6
 
-# read file contents safely (preserve newlines)
-RESULT_XML=$(cat "$RESULT_XML_FILE")
-AGENT_STRING=$(cat "$AGENT_STRING_FILE")
+# # read file contents safely (preserve newlines)
+# RESULT_XML=$(cat "$RESULT_XML_FILE")
+# AGENT_STRING=$(cat "$AGENT_STRING_FILE")
 
 
 # this would be a known service account user that creates the placeholders in the DM DB.
@@ -18,7 +18,7 @@ SERVICE_ACCOUNT_USER_ID=13894655
 
 ## this would be a mapping in the service for the assignments API
 
-AUTO_EVENT_NAME="cogat.auto.02-25-2"
+AUTO_EVENT_NAME="cogat.auto.Feb25A"
 
 run_sql() {
   local query="$1"
@@ -113,18 +113,66 @@ fi
 
 if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-SC" ]]; then
   FORM_CONTENT_ID=457 # Form 7
-  TEST_LEVEL_ID=462 # level 13/14
   TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
   BATTERY_ID=731 # Verbal
   SUBTEST_SECTION_ID=1929 # VERBAL BATTERY: Test 2: Sentence Completion 
 fi
 
 if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-VC" ]]; then
   FORM_CONTENT_ID=457 # Form 7
-  TEST_LEVEL_ID=462 # level 13/14
   TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
   BATTERY_ID=731 # Verbal
   SUBTEST_SECTION_ID=1930 # VERBAL BATTERY: Test 3: Verbal Classification 
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-FM" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=729 # Nonverbal
+  SUBTEST_SECTION_ID=1934 # NONVERBAL BATTERY: Test 7: Figure Matrices
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-PF" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=729 # Nonverbal
+  SUBTEST_SECTION_ID=1935 # NONVERBAL BATTERY: Test 8: Paper Folding
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-FC" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=729 # Nonverbal
+  SUBTEST_SECTION_ID=1936 # NONVERBAL BATTERY: Test 9: Figure Classification
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-NA" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=730 # Quantitative
+  SUBTEST_SECTION_ID=1931 # QUANTITATIVE BATTERY: Test 4: Number Analogies
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-NP" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=730 # Quantitative
+  SUBTEST_SECTION_ID=1932 # QUANTITATIVE BATTERY: Test 5: Number Puzzles
+fi
+
+if [[ "$ASSIGNMENT_ID" = "CogAT_7_1314-NS" ]]; then
+  FORM_CONTENT_ID=457 # Form 7
+  TEST_GROUP_ID=458 # CogAT 7 Complete
+  TEST_LEVEL_ID=462 # level 13/14
+  BATTERY_ID=730 # Quantitative
+  SUBTEST_SECTION_ID=1933 # QUANTITATIVE BATTERY: Test 6: Number Series
 fi
 
 formContentName=$(run_sql "select description from Content where contentID = ${FORM_CONTENT_ID};")
@@ -162,7 +210,7 @@ if [[ -z "$testEventId" ]]; then
   run_sql_exec "insert into TestEventLocation (testEventID, locationId, isActive, createUserId, createDateTime) values(${testEventId}, ${parentLocationId}, 1, ${SERVICE_ACCOUNT_USER_ID}, GETDATE())"
 else
   testEventName=$(run_sql "select testEventName from testEvent where testEventId=${testEventId}")
-  echo " \nLocated existing test event: ${testEventName} (${testEventId})"
+  echo " \n Located existing test event: ${testEventName} (${testEventId})"
 fi
 
 echo " \n STEP 4: TEST SESSION\n"
@@ -189,12 +237,16 @@ if [[ -z "$testSessionId" ]]; then
           TEST_GROUP_ID="${TEST_GROUP_ID}" \
           SUBTEST_SECTION_ID="${SUBTEST_SECTION_ID}" \
           SESSION_CODE="${sessionCode}")
-  echo " Created Test Session: ${testSessionName} (${testSessionId})"
+  echo "\n Created Test Session: ${testSessionName} (${testSessionId})"
 else
   echo " Located existing Test Session: ${sessionCode} (${testSessionId})"
 fi
 
 echo " \n STEP 5: STUDENT MANAGED SESSION\n"
+
+echo " A Manage Session Record typically represents the connection of a student to a Test Session.
+ It is also historically the "source of truth" for the Learnosity UUID.
+ For the KDMH service, it is primarily added to preserve the DB relationships required."
 
 manageSessionId=$(run_sql "select manageSessionId from manageSession where manageSessionGuid='${SESSION_UUID}'")
 if [[ -z "$manageSessionId" ]]; then
@@ -204,32 +256,37 @@ if [[ -z "$manageSessionId" ]]; then
        TEST_SESSION_ID="${testSessionId}" \
        SESSION_UUID="${SESSION_UUID}"
   )
-  echo " Created Student Managed Session: ${manageSessionId}"
+  echo "\n Created Student Managed Session: ${manageSessionId}"
 else
   echo " Located existing Student Managed Session: ${manageSessionId}"
 fi
 
 echo " \n STEP 6: STUDENT TEST SESSION SECTION\n"
+
+echo " The StudentTestSessionSection saves a record which tracks the Students answer string.
+ This is the table queried to pass results to scoring."
+
 testSessionSectionId=$(run_sql "select StudentTestSessionSectionId from StudentTestSessionSection where ManageSessionId='${manageSessionId}'")
 if [[ -z "$testSessionSectionId" ]]; then
   testSessionSectionId=$(run_sql_file insert_student_test_session_section.sql \
     -v MANAGE_SESSION_ID="${manageSessionId}" \
        SUBTEST_SECTION_ID="${SUBTEST_SECTION_ID}" \
        ANSWER_STRING="${ANSWER_STRING}")
-  echo " Created Student Test Session Section: ${testSessionSectionId} with answer string '${ANSWER_STRING}'"
+  echo "\n Created Student Test Session Section: ${testSessionSectionId} with answer string '${ANSWER_STRING}'"
 else
   echo " Updating (TODO)"
 fi
 
-echo " \n STEP 7: TEST COMPLETE SERVICE\n"
-testCompleteServiceId=$(run_sql "select testCompleteServiceId from TestCompleteService where sessionId='${manageSessionId}'")
-if [[ -z "$testCompleteServiceId" ]]; then
-  testCompleteServiceId=$(run_sql_file insert_test_complete_service.sql \
-    -v TEST_SESSION_ID="${testSessionId}" \
-       USER_ID="${USER_ID}" \
-       RESULT_XML="${RESULT_XML}" \
-       AGENT_STRING="${AGENT_STRING}")
-  echo " Created Test Complete Service record: ${testCompleteServiceId}"
-else
-  echo " Updating (TODO)"
-fi
+# turns out this isn't needed!
+# echo " \n STEP 7: TEST COMPLETE SERVICE\n"
+# testCompleteServiceId=$(run_sql "select testCompleteServiceId from TestCompleteService where sessionId='${manageSessionId}'")
+# if [[ -z "$testCompleteServiceId" ]]; then
+#   testCompleteServiceId=$(run_sql_file insert_test_complete_service.sql \
+#     -v TEST_SESSION_ID="${testSessionId}" \
+#        USER_ID="${USER_ID}" \
+#        RESULT_XML="${RESULT_XML}" \
+#        AGENT_STRING="${AGENT_STRING}")
+#   echo " Created Test Complete Service record: ${testCompleteServiceId}"
+# else
+#   echo " Updating (TODO)"
+# fi
