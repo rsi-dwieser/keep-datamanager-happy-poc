@@ -4,6 +4,13 @@ USER_ID=$1
 ASSIGNMENT_ID=$2
 SESSION_UUID=$3
 ANSWER_STRING=$4
+RESULT_XML_FILE=$5
+AGENT_STRING_FILE=$6
+
+# read file contents safely (preserve newlines)
+RESULT_XML=$(cat "$RESULT_XML_FILE")
+AGENT_STRING=$(cat "$AGENT_STRING_FILE")
+
 
 # this would be a known service account user that creates the placeholders in the DM DB.
 # for now, this is my Danny DM 101 user
@@ -11,7 +18,7 @@ SERVICE_ACCOUNT_USER_ID=13894655
 
 ## this would be a mapping in the service for the assignments API
 
-AUTO_EVENT_NAME="cogat.auto.4"
+AUTO_EVENT_NAME="cogat.auto.02-25"
 
 run_sql() {
   local query="$1"
@@ -119,6 +126,9 @@ echo " ${ASSIGNMENT_ID} maps to:
 
 echo " \n STEP 3: TEST EVENT \n"
 
+echo " A Test Event (Order) connects an assessment to a student roster. This is automatically created _after_ the first student has completed testing for a specific assessment (i.e. CogAT).
+ This service would auto-create a single test event for a combination of assessment, roster, and a fixed test period (like fall)."
+
 # is there a test event for the parent location?
 testEventId=$(run_sql "select testEventId from testEvent where contractId=${contractId} and testEventName='${AUTO_EVENT_NAME}' and closeDate > GETDATE()")
 if [[ -z "$testEventId" ]]; then
@@ -144,6 +154,11 @@ current_date=$(date +"%Y-%m-%d")
 testSessionName="${ASSIGNMENT_ID} ${USER_ID} ${current_date}"
 sessionCode="${testEventId}-${SUBTEST_SECTION_ID}"
 testSessionId=$(run_sql "select testSessionId from testSession where sessionCode='${sessionCode}'")
+
+echo " Typically DM creates a test session per date/grade/test/level. To keep DM happy we create a singular session per assignment/user:
+  Session Name: ${testSessionName}
+  Session Code: ${sessionCode}"
+
 if [[ -z "$testSessionId" ]]; then
   testSessionId=$(run_sql_file insert_test_session.sql \
         -v TEST_SESSION_NAME="${testSessionName}" \
@@ -185,6 +200,19 @@ if [[ -z "$testSessionSectionId" ]]; then
        SUBTEST_SECTION_ID="${SUBTEST_SECTION_ID}" \
        ANSWER_STRING="${ANSWER_STRING}")
   echo " Created Student Test Session Section: ${testSessionSectionId} with answer string '${ANSWER_STRING}'"
+else
+  echo " Updating (TODO)"
+fi
+
+echo " \n STEP 7: TEST COMPLETE SERVICE\n"
+testCompleteServiceId=$(run_sql "select testCompleteServiceId from TestCompleteService where sessionId='${manageSessionId}'")
+if [[ -z "$testCompleteServiceId" ]]; then
+  testCompleteServiceId=$(run_sql_file insert_test_complete_service.sql \
+    -v TEST_SESSION_ID="${testSessionId}" \
+       USER_ID="${USER_ID}" \
+       RESULT_XML="${RESULT_XML}" \
+       AGENT_STRING="${AGENT_STRING}")
+  echo " Created Test Complete Service record: ${testCompleteServiceId}"
 else
   echo " Updating (TODO)"
 fi

@@ -20,8 +20,8 @@ OUTPUT INSERTED.StudentTestSessionSectionId
 VALUES (
     $(SUBTEST_SECTION_ID), 
     4,                       -- completed?
-    1,                       -- I don't think this value actually matters.
-    1,                       --
+    0,                       -- current answered
+    0,                       -- current number
     'Complete',
     '$(MANAGE_SESSION_ID)',
     GETDATE(),
@@ -29,7 +29,7 @@ VALUES (
     '$(ANSWER_STRING)',
     1,                        -- Completed
     1,
-    0,
-    0,
+    0,                        -- num complete
+    0,                        -- num questions
     24
 );
